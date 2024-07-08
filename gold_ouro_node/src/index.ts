@@ -47,7 +47,14 @@ function decryptText(encryptedHex: string, key: string, iv: string) {
   });
 
   const decrypted = CryptoJS.AES.decrypt(cipherParams, sha256_key, { mode: CryptoJS.mode.CBC, iv: md5_iv });
-  return decrypted.toString(CryptoJS.enc.Utf8);
+  let decrypt: string;
+  try {
+    decrypt = decrypted.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    decrypt = '';
+  }
+
+  return decrypt;
 }
 
 app.get('/:msg', (req: Request, res: Response) => {

@@ -51,6 +51,6 @@
   "idf.port": "/dev/ttyACM0",
   "idf.flashType": "UART",
   "editor.formatOnSave": true,
-  "idf.portWin": "COM4",
+  "idf.portWin": "COM11",
   "discord.enabled": true,
 }
