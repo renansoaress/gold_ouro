@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "pwa-node",
+            "name": "launch",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsnd",
+            "program": "${workspaceFolder}/src/index.ts",
+            "args": [
+                "--transpile-only",
+                "--respawn",
+                "--project",
+                "tsconfig.json",
+            ],
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+        },
+    ]
+}
