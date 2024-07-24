@@ -60,7 +60,7 @@ void test()
             sprintf(iv, "GOLD%sOURO", iv_recv);
 
             char msg_recv[strlen(hex_msg) - strlen(iv_recv) - 4 + 1];
-            char msg_size_final = strlen(hex_msg) - 2;
+            int msg_size_final = strlen(hex_msg) - 2;
             substring(msg_recv, hex_msg, 16, msg_size_final);
 
             size_t msg_ascii_size = (strlen(msg_recv) / 2);
