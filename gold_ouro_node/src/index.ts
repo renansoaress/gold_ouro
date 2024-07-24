@@ -14,13 +14,37 @@ const app: Express = express();
 const port = process.env.PORT || 4000;
 const GOKEY = 'minha senha secreta';
 
-function asciiToBase64(input: string): string {
-  return btoa(input);
+function hexToBase64(hex: string): string {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary);
 }
 
-function hexToAscii(input: string): string {
-  const buffer = Buffer.from(input, 'hex');
-  return buffer.toString('ascii');
+function asciiToBase64(ascii: string): string {
+  let binary = '';
+  for (let i = 0; i < ascii.length; i++) {
+    binary += String.fromCharCode(ascii.charCodeAt(i));
+  }
+
+  return btoa(binary);
+}
+
+function hexToAscii(hex: string): string {
+  let ascii = '';
+  for (let i = 0; i < hex.length; i += 2) {
+    const hexChar = hex.substr(i, 2);
+    const asciiChar = String.fromCharCode(parseInt(hexChar, 16));
+    ascii += asciiChar;
+  }
+  return ascii;
 }
 
 function generateRandomNumber(): number {
@@ -60,7 +84,8 @@ function decryptText(encryptedHex: string, key: string, iv: string) {
 app.get('/:msg', (req: Request, res: Response) => {
   const { msg } = req.params;
 
-  const randomNumber = generateRandomNumber();
+  // const randomNumber = generateRandomNumber();
+  const randomNumber = new Date().getTime();
   const iv = randomNumber.toString(16).toUpperCase().padStart(14, '0');
   const iv_go = `GOLD${iv}OURO`;
 
@@ -71,6 +96,8 @@ app.get('/:msg', (req: Request, res: Response) => {
   let dataHex = encrypted.ciphertext.toString(CryptoJS.enc.Hex).toUpperCase();
   const dataAscii = hexToAscii(dataHex);
   const dataBase64 = asciiToBase64(dataAscii);
+  const dataBase64New = hexToBase64(dataHex);
+  console.log(`hexToBase64 [${dataBase64New.length}] :`, dataBase64New);
   console.log(`dataBase64 [${dataBase64.length}] :`, dataBase64);
   dataHex = '5E' + iv + dataHex + '24';
   console.log('DataHex :', dataHex);
@@ -81,7 +108,7 @@ app.get('/:msg', (req: Request, res: Response) => {
   //////////////////////////////////////////////////////////////////
 
   const strData = hexToAscii(dataHex); // pronto para enviar
-  const strDataBase64 = asciiToBase64(strData);
+  const strDataBase64 = hexToBase64(dataHex);
   const firstData = strData[0];
   const finalData = strData[strData.length - 1];
   const isValid = firstData === '^' && finalData === '$';
@@ -97,7 +124,7 @@ app.get('/:msg', (req: Request, res: Response) => {
     console.log(`${strData} Decrypted (${decrypted})`);
 
     res.send(
-      `Encrypt Base64[${strDataBase64.length}](${strDataBase64})<br>Encrypt[${strData.length}](${strData}})<br>Decrypt[${decrypted.length}](${decrypted})`,
+      `Encrypt Base64[${strDataBase64.length}](${strDataBase64})<br>Encrypt[${strData.length}](${strData})<br>Decrypt[${decrypted.length}](${decrypted})`,
     );
   } else {
     res.send('?');
