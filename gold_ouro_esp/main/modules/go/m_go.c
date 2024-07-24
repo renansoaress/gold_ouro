@@ -128,6 +128,7 @@ void decrypt_string(const unsigned char *input, size_t input_len, const char *ke
     mbedtls_aes_init(&aes);
     mbedtls_aes_setkey_dec(&aes, sha256_key, 256);
     mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, input_len, md5_iv, input, decrypt_output);
+    mbedtls_aes_free(&aes);
     // ESP_LOG_BUFFER_HEX("cbc_decrypt", decrypt_output, input_len);
 
     // remove PKCS#5 padding
@@ -150,5 +151,4 @@ void decrypt_string(const unsigned char *input, size_t input_len, const char *ke
     (*output)[*output_len] = '\0';
 
     free(decrypt_output);
-    mbedtls_aes_free(&aes);
 }
