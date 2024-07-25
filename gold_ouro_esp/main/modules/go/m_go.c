@@ -55,12 +55,14 @@ void encrypt_string(const char *input, const char *key, const char *iv, unsigned
     size_t input_len = strlen(input);
     size_t padded_input_len = (input_len / 16 + 1) * 16;
 
-    unsigned char *padded_input = (unsigned char *)malloc(padded_input_len);
-    if (!padded_input)
-    {
-        printf("[encrypt_string] Failed to allocate memory\n");
-        return;
-    }
+    unsigned char padded_input[padded_input_len];
+    memset(padded_input_len, 0, sizeof(padded_input_len));
+    // unsigned char *padded_input = (unsigned char *)malloc(padded_input_len);
+    // if (!padded_input)
+    // {
+    //     printf("[encrypt_string] Failed to allocate memory\n");
+    //     return;
+    // }
 
     memcpy(padded_input, input, input_len);
 
@@ -71,27 +73,40 @@ void encrypt_string(const char *input, const char *key, const char *iv, unsigned
         padded_input[i] = padding_value;
     }
 
-    *output = (unsigned char *)malloc(padded_input_len);
+    // *output = (unsigned char *)malloc(padded_input_len);
+    *output = (unsigned char *)calloc(padded_input_len, sizeof(unsigned char));
     if (!(*output))
     {
         printf("[encrypt_string] Failed to allocate memory for output\n");
-        free(padded_input);
+        // free(padded_input);
         return;
     }
 
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_enc(&aes, sha256_key, 256);
+    int ret = mbedtls_aes_setkey_enc(&aes, sha256_key, 256);
+    if (ret != 0)
+    {
+        printf("Falha ao definir chave de criptografia: -0x%04x\n", -ret);
+        mbedtls_aes_free(&aes);
+        return;
+    }
 
     // ECB
     // mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_ENCRYPT, (unsigned char *)padded_input, encrypt_output);
 
-    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, padded_input_len, md5_iv, padded_input, *output);
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, padded_input_len, md5_iv, padded_input, *output);
+    if (ret != 0)
+    {
+        printf("Falha na criptografia CBC: -0x%04x\n", -ret);
+        mbedtls_aes_free(&aes);
+        return;
+    }
     // ESP_LOG_BUFFER_HEX("cbc_encrypt", *output, padded_input_len);
 
     *output_len = padded_input_len;
 
-    free(padded_input);
+    // free(padded_input);
     mbedtls_aes_free(&aes);
 
     // unsigned char base64_output[128]; // Buffer para a saída base64
@@ -111,23 +126,37 @@ void decrypt_string(const unsigned char *input, size_t input_len, const char *ke
 {
     unsigned char sha256_key[32];
     calculate_sha256((const unsigned char *)key, strlen(key), sha256_key);
+    printf("SHA256 Key: (");
+    for (int i = 0; i < 32; i++)
+    {
+        printf("%02X", sha256_key[i]);
+    }
+    printf(")\n");
     // ESP_LOG_BUFFER_HEX("SHA256 KEY", sha256_key, 32);
 
     unsigned char md5_iv[16];
     calculate_md5((const unsigned char *)iv, strlen(iv), md5_iv);
     // ESP_LOG_BUFFER_HEX("MD5 IV", md5_iv, 16);
 
-    unsigned char *decrypt_output = (unsigned char *)malloc(input_len);
-    if (!decrypt_output)
-    {
-        printf("[decrypt_string] Failed to allocate memory\n");
-        return;
-    }
+    unsigned char decrypt_output[input_len];
+    memset(decrypt_output, 0, sizeof(decrypt_output));
 
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_dec(&aes, sha256_key, 256);
-    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, input_len, md5_iv, input, decrypt_output);
+    int ret = mbedtls_aes_setkey_dec(&aes, sha256_key, 256);
+    if (ret != 0)
+    {
+        printf("Falha ao definir chave de criptografia: -0x%04x\n", -ret);
+        mbedtls_aes_free(&aes);
+        return;
+    }
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, input_len, md5_iv, input, decrypt_output);
+    if (ret != 0)
+    {
+        printf("Falha na criptografia CBC: -0x%04x\n", -ret);
+        mbedtls_aes_free(&aes);
+        return;
+    }
     mbedtls_aes_free(&aes);
     // ESP_LOG_BUFFER_HEX("cbc_decrypt", decrypt_output, input_len);
 
@@ -136,19 +165,18 @@ void decrypt_string(const unsigned char *input, size_t input_len, const char *ke
     if (padding_value > 16)
     {
         printf("[decrypt_string] Invalid padding value\n");
-        free(decrypt_output);
+        // free(decrypt_output);
         return;
     }
     *output_len = input_len - padding_value;
-    *output = (char *)malloc(*output_len + 1);
+    // *output = (char *)malloc(*output_len + 1);
+    *output = (char *)calloc(*output_len + 1, sizeof(char));
     if (!(*output))
     {
         printf("[decrypt_string] Failed to allocate memory for output\n");
-        free(decrypt_output);
+        // free(decrypt_output);
         return;
     }
     memcpy(*output, decrypt_output, *output_len);
     (*output)[*output_len] = '\0';
-
-    free(decrypt_output);
 }
