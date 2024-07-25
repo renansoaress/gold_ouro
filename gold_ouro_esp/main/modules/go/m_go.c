@@ -56,7 +56,7 @@ void encrypt_string(const char *input, const char *key, const char *iv, unsigned
     size_t padded_input_len = (input_len / 16 + 1) * 16;
 
     unsigned char padded_input[padded_input_len];
-    memset(padded_input_len, 0, sizeof(padded_input_len));
+    memset(padded_input, 0, sizeof(padded_input));
     // unsigned char *padded_input = (unsigned char *)malloc(padded_input_len);
     // if (!padded_input)
     // {
